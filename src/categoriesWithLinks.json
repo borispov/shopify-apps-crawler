@@ -1,0 +1,40 @@
+{
+  "design": {
+    "notifications": "https://apps.shopify.com/browse/store-design-notifications",
+    "imagesAndMedia": "https://apps.shopify.com/browse/store-design-images-and-media",
+    "pageEnhancements": "https://apps.shopify.com/browse/store-design-page-enhancements",
+    "storePages": "https://apps.shopify.com/browse/store-design-store-pages",
+    "navigationAndSearch": "https://apps.shopify.com/browse/store-design-navigation-and-search",
+    "internationalization": "https://apps.shopify.com/browse/store-design-internationalization"
+  },
+  "marketing": {
+    "marketingAnalytics": "https://apps.shopify.com/browse/marketing-marketing-and-conversion-analytics",
+    "advertising": "https://apps.shopify.com/browse/marketing-advertising",
+    "emailMarketing": "https://apps.shopify.com/browse/marketing-email-marketing",
+    "seo": "https://apps.shopify.com/browse/marketing-search-engine-optimization",
+    "directMarketing": "https://apps.shopify.com/browse/marketing-direct-marketing",
+    "contentMarketing": "https://apps.shopify.com/browse/marketing-content-marketing"
+  },
+  "conversion": {
+    "promotions": "https://apps.shopify.com/browse/conversion-promotions",
+    "upsale": "https://apps.shopify.com/browse/conversion-upselling-and-cross-selling",
+    "feedback": "https://apps.shopify.com/browse/conversion-customer-feedback",
+    "cartModification": "https://apps.shopify.com/browse/conversion-cart-modification",
+    "recoveringOrders": "https://apps.shopify.com/browse/conversion-recovering-orders",
+    "storeAlerts": "https://apps.shopify.com/browse/conversion-store-alerts"
+  },
+  "storeManagement": {
+    "operations": "https://apps.shopify.com/browse/store-management-operations",
+    "businessInsights": "https://apps.shopify.com/browse/store-management-business-insights",
+    "storeDevelopment": "https://apps.shopify.com/browse/store-management-store-development",
+    "policyAndSecurity": "https://apps.shopify.com/browse/store-management-policy-and-security-measures",
+    "finances": "https://apps.shopify.com/browse/store-management-finances"
+  },
+  "fulfillment": {
+    "managingOrders": "https://apps.shopify.com/browse/fulfillment-managing-orders",
+    "fulfillingOrders": "https://apps.shopify.com/browse/fulfillment-fulfilling-orders",
+    "managingInventory": "https://apps.shopify.com/browse/fulfillment-managing-inventory",
+    "inventoryPlanning": "https://apps.shopify.com/browse/fulfillment-inventory-planing",
+    "fulfillmentRecords": "https://apps.shopify.com/browse/fulfillment-fulfillment-records"
+  }
+}

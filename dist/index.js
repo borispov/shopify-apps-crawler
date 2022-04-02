@@ -13,13 +13,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer_1 = __importDefault(require("puppeteer"));
-const categories_1 = __importDefault(require("./categories"));
 // CONSTANTS
 const reviewsAnchorSelector = '.ui-review-count-summary a';
 const averageReviewSelector = '.ui-star-rating__rating';
 const ratingListSelector = '.reviews-summary__rating-breakdown';
 const nextPageSelector = '.search-pagination__next-page-text';
-const shopifyUrl = 'https://apps.shopify.com/browse/';
 const crawlAppLinks = (page, depth = 1, pageNum = 1, cards = []) => __awaiter(void 0, void 0, void 0, function* () {
     // END: break recursion
     if (depth === 0) {
@@ -28,30 +26,34 @@ const crawlAppLinks = (page, depth = 1, pageNum = 1, cards = []) => __awaiter(vo
     const currentUrl = page.url();
     // map over elements, extract href and titile, if for some reason:
     // some elements return undefined, filter them out to avoid passing them on
+    yield page.waitForSelector('.ui-app-card');
+    //    await page.waitForTimeout(300);
+    if ((yield page.$('.ui-app-card')) === null) {
+        return cards;
+    }
     const currentPageCards = yield page.$$eval('.ui-app-card', (els) => {
-        console.log('asdddddddddddddddkk');
         return els.map(el => {
             var _a;
             const anchor = el.querySelector('a');
             const href = anchor === null || anchor === void 0 ? void 0 : anchor.href.split('?')[0];
             const title = (_a = anchor === null || anchor === void 0 ? void 0 : anchor.querySelector('h2')) === null || _a === void 0 ? void 0 : _a.textContent;
-            console.log('we got href: ' + href);
             return href && title
-                ? { title, href }
+                ? {
+                    title,
+                    href,
+                }
                 : undefined;
         }).filter(e => e);
     });
-    cards.concat(currentPageCards);
-    console.log('those are my cards:');
+    yield page.waitForTimeout(50);
+    const newCards = cards.concat(currentPageCards);
     if (!hasNextPage(page)) {
         return cards;
     }
-    //    const urlWithPageNum = await getNextPage(page);
-    const urlWithPageNum = `${currentUrl.split('?')[0]}?page=${pageNum + 1}`;
-    // navigate to the next page and pass it on to the next iteration of the function
+    const urlWithPageNum = `${currentUrl.split('?')[0]}?page=${pageNum + 1}&sort_by=installed`;
     yield page.goto(urlWithPageNum);
     // recurse
-    return crawlAppLinks(page, depth - 1, pageNum + 1, cards);
+    return crawlAppLinks(page, depth - 1, pageNum + 1, newCards);
 });
 const crawlRatings = (page) => __awaiter(void 0, void 0, void 0, function* () {
     // grab overall ratings
@@ -85,33 +87,84 @@ const hasNextPage = (page) => __awaiter(void 0, void 0, void 0, function* () {
 const getNextPage = (page) => __awaiter(void 0, void 0, void 0, function* () {
     return yield page.$eval(nextPageSelector, el => el === null || el === void 0 ? void 0 : el.getAttribute('href'));
 });
-const allCategoriesLinks = () => {
-    let newCats = {};
-    for (const [catName, cat] of Object.entries(categories_1.default)) {
-        newCats[catName] = {};
-        let keys = Object.keys(cat);
-        for (const [k, v] of Object.entries(cat)) {
-            // get the URLs of ALL Shopify App Categories
-            let catKey = keys.find(el => el === k);
-            const categoryUrl = shopifyUrl + v;
-            newCats[catName][k] = shopifyUrl + v;
+const aggregateAppLinksByCategories = (page) => __awaiter(void 0, void 0, void 0, function* () {
+    let catLinks = {};
+    let newcatts = {
+        storeManagement: {
+            operations: "https://apps.shopify.com/browse/store-management-operations",
+        }
+    };
+    for (const [catName, catSubCategories] of Object.entries(newcatts)) {
+        catLinks[catName] = {};
+        for (const [subCategory, catLink] of Object.entries(catSubCategories)) {
+            console.log(`visiting : ${catLink} `);
+            yield page.goto(catLink);
+            const appLinks = yield crawlAppLinks(page, 1);
+            catLinks[catName][subCategory] = {
+                links: appLinks,
+                length: appLinks.length
+            };
         }
     }
-    console.log(newCats);
-};
+    return catLinks;
+});
 const mainFn = () => __awaiter(void 0, void 0, void 0, function* () {
     const browser = yield puppeteer_1.default.launch();
     const page = yield browser.newPage();
-    const links = [`https://apps.shopify.com/omnisend/reviews`];
-    const url = 'https://apps.shopify.com/browse' + categories_1.default.marketing;
-    // await page.goto(links[0], { waitUntil: 'networkidle2'});
     // await page.goto(url, { waitUntil: 'networkidle2'});
-    // await page.waitForSelector(reviewsAnchorSelector)
-    let designAppLinks = [];
-    // console.log(designAppLinks);
+    // let u = 'https://apps.shopify.com/browse/store-design-page-enhancements';
+    // await page.goto(u);
+    // const appLinks = await crawlAppLinks(page, 1);
+    // console.log(appLinks);
+    let all = yield aggregateAppLinksByCategories(page);
+    let allKeys = Object.keys(all);
+    for (let i = 0; i < allKeys.length; i++) {
+        let catIndex = allKeys[i];
+        let catKeys = Object.keys(all[catIndex]);
+        for (let j = 0; j < catKeys.length; j++) {
+            let subIndex = catKeys[j];
+            let app = all[catIndex][subIndex].links;
+            all[catIndex][subIndex].links = app.map((appData) => __awaiter(void 0, void 0, void 0, function* () {
+                console.log('link? ::: ', appData.href);
+                yield page.goto(appData.href, { waitUntil: 'networkidle2' });
+                let r = yield crawlRatings(page);
+                console.log(appData);
+                console.log(r);
+                return Object.assign(Object.assign({}, appData), r);
+            }));
+            console.log(all[catIndex][subIndex]);
+        }
+    }
+    // all = await Object.keys(all).map(async (k) => {
+    //     return Object.keys(all[k]).map(async(subcat) => {
+    //         return all[k][subcat].links.map(async (app:any) => {
+    //             // console.log(app);
+    //             if (!app) return
+    //             await page.waitForTimeout(99)
+    //             await page.goto(app.href, { waitUntil: 'networkidle2'});
+    //             let r = await crawlRatings(page);
+    //             return {
+    //                 ...app,
+    //                 ...r
+    //             }
+    //         })
+    //     })
+    // });
+    console.log('--------------------------');
+    console.log('--------------------------');
+    console.log('--------------------------');
+    console.log(all.storeManagement.operations.links);
+    console.log('--------------------------');
+    console.log('--------------------------');
+    console.log('--------------------------');
+    // console.log(all);
+    // for (const [k,v] of Object.entries(all)) {
+    //     Object.values(k).map(subCat => {
+    //         console.log(subCat)
+    //     })
+    // }
     // const appLinks = await crawlAppLinks(page, 5);
     // const ratings = await crawlRatings(page);
     yield browser.close();
 });
-// mainFn();
-allCategoriesLinks();
+mainFn();

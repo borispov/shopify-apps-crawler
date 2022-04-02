@@ -1,10 +1,11 @@
+"use strict";
 // TODO: Add Categories:
 // - Customer Service
 // - Merchandising
 // - Shipping And Delivery
 // - Sourcing and selling products
-
-export default {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = {
     design: {
         notifications: 'store-design-notifications',
         imagesAndMedia: 'store-design-images-and-media',
@@ -43,5 +44,4 @@ export default {
         inventoryPlanning: 'fulfillment-inventory-planing',
         fulfillmentRecords: 'fulfillment-fulfillment-records',
     },
-
 };
