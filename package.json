@@ -1,0 +1,24 @@
+{
+  "name": "shopify-apps-crawler",
+  "version": "1.0.0",
+  "description": "trying to figure out an efficient way to get data over shopify-apps using puppeteer and maybe cheerio",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/borispov/shopify-apps-crawler"
+  },
+  "keywords": [
+    "shopify",
+    "apps",
+    "web-scraping",
+    "crawler"
+  ],
+  "author": "Boris Povolotsky <boristofu@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^13.5.2"
+  }
+}
