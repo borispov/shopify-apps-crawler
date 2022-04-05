@@ -10,5 +10,23 @@
 - Total Reviews
 - Average Rating
 - Rating Per Star (n 3* reviews, etc...)
-- Launch date?
+- Launch date? -- * Requires accessing additional source (sasi). Not currently interested to do so. 
 - Installs(There's no way to tell...)
+
+
+## Thoughts
+After dealing with numerous issues regarding web-scraping in general, and using puppeteer and cheerio in particular. I've attempted to use cheerio instead of Puppeteer to improve performance but cheerio isn't suited for SPA applications.
+
+Using puppeteer's page.evaluate basically reduces any need to use cheerio. I compress everything I need to grab within a single page inside page.evaluate function and it works out pretty fine.
+
+## What's Next?
+There are a couple of things to figure out:
+- UI: How to present the data to the user.
+- Backend: How to save the data:
+- - Should I use a database?
+- - Should I keep saving it to a json file?
+- - How often should I be web-scraping?
+
+## Ideas
+- Pull reviews and store inside app's object. Enable the user to access reviews' easily in order to examine app's review content.
+- Use express on the backend with some HTML templating engine.
