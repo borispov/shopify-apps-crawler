@@ -53,7 +53,7 @@ const crawlAppLinks = (page, depth = 1, pageNum = 1, cards = []) => __awaiter(vo
     const urlWithPageNum = `${currentUrl.split('?')[0]}?page=${pageNum + 1}&sort_by=installed`;
     yield page.goto(urlWithPageNum);
     // recurse
-    return crawlAppLinks(page, depth - 1, pageNum + 1, newCards);
+    return crawlAppLinks(page, 0, pageNum + 1, newCards);
 });
 const crawlRatings = (page) => __awaiter(void 0, void 0, void 0, function* () {
     // grab overall ratings
@@ -99,16 +99,22 @@ const aggregateAppLinksByCategories = (page) => __awaiter(void 0, void 0, void 0
         for (const [subCategory, catLink] of Object.entries(catSubCategories)) {
             console.log(`visiting : ${catLink} `);
             yield page.goto(catLink);
-            const appLinks = yield crawlAppLinks(page, 1);
+            let appLinks = yield crawlAppLinks(page, 1);
+            appLinks = appLinks.forEach((appLink) => __awaiter(void 0, void 0, void 0, function* () {
+                yield page.goto(appLink.href, { waitUntil: 'networkidle2' });
+                let ratings = yield crawlRatings(page);
+                return Object.assign(Object.assign({}, appLink), ratings);
+            }));
             catLinks[catName][subCategory] = {
                 links: appLinks,
-                length: appLinks.length
+                // length: appLinks.length
             };
         }
     }
     return catLinks;
 });
 const mainFn = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const browser = yield puppeteer_1.default.launch();
     const page = yield browser.newPage();
     // await page.goto(url, { waitUntil: 'networkidle2'});
@@ -116,53 +122,13 @@ const mainFn = () => __awaiter(void 0, void 0, void 0, function* () {
     // await page.goto(u);
     // const appLinks = await crawlAppLinks(page, 1);
     // console.log(appLinks);
+    // MUST FIND DIFFERENT METHOD
+    // Nested Objects ARE REALLY A HELL TO MANAGE!!
+    //MAYBE PULL RATINGS FROM WITHIN THE APP LINK FUNCTION ???
     let all = yield aggregateAppLinksByCategories(page);
-    let allKeys = Object.keys(all);
-    for (let i = 0; i < allKeys.length; i++) {
-        let catIndex = allKeys[i];
-        let catKeys = Object.keys(all[catIndex]);
-        for (let j = 0; j < catKeys.length; j++) {
-            let subIndex = catKeys[j];
-            let app = all[catIndex][subIndex].links;
-            all[catIndex][subIndex].links = app.map((appData) => __awaiter(void 0, void 0, void 0, function* () {
-                console.log('link? ::: ', appData.href);
-                yield page.goto(appData.href, { waitUntil: 'networkidle2' });
-                let r = yield crawlRatings(page);
-                console.log(appData);
-                console.log(r);
-                return Object.assign(Object.assign({}, appData), r);
-            }));
-            console.log(all[catIndex][subIndex]);
-        }
+    for (const v of Object.values((_a = all === null || all === void 0 ? void 0 : all.storeManagement) === null || _a === void 0 ? void 0 : _a.operations)) {
+        console.log(v);
     }
-    // all = await Object.keys(all).map(async (k) => {
-    //     return Object.keys(all[k]).map(async(subcat) => {
-    //         return all[k][subcat].links.map(async (app:any) => {
-    //             // console.log(app);
-    //             if (!app) return
-    //             await page.waitForTimeout(99)
-    //             await page.goto(app.href, { waitUntil: 'networkidle2'});
-    //             let r = await crawlRatings(page);
-    //             return {
-    //                 ...app,
-    //                 ...r
-    //             }
-    //         })
-    //     })
-    // });
-    console.log('--------------------------');
-    console.log('--------------------------');
-    console.log('--------------------------');
-    console.log(all.storeManagement.operations.links);
-    console.log('--------------------------');
-    console.log('--------------------------');
-    console.log('--------------------------');
-    // console.log(all);
-    // for (const [k,v] of Object.entries(all)) {
-    //     Object.values(k).map(subCat => {
-    //         console.log(subCat)
-    //     })
-    // }
     // const appLinks = await crawlAppLinks(page, 5);
     // const ratings = await crawlRatings(page);
     yield browser.close();

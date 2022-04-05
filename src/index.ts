@@ -1,4 +1,4 @@
-import puppeteer, { ConsoleMessage, Puppeteer } from 'puppeteer';
+import puppeteer, { Puppeteer } from 'puppeteer';
 import categories from './categoriesWithLinks.json'
 
 // CONSTANTS
@@ -46,7 +46,7 @@ const crawlAppLinks = async (
    const urlWithPageNum = `${currentUrl.split('?')[0]}?page=${pageNum+1}&sort_by=installed`;
    await page.goto(urlWithPageNum);
    // recurse
-   return crawlAppLinks(page, depth - 1, pageNum + 1, newCards);
+   return crawlAppLinks(page, 0, pageNum + 1, newCards);
 }
 
 const crawlRatings = async (page: puppeteer.Page) => {
@@ -104,10 +104,18 @@ const aggregateAppLinksByCategories = async (page:puppeteer.Page) => {
         for (const [subCategory, catLink] of Object.entries(catSubCategories)) {
             console.log(`visiting : ${catLink} `)
             await page.goto(catLink);
-            const appLinks = await crawlAppLinks(page, 1);
+            let appLinks = await crawlAppLinks(page, 1);
+            appLinks = appLinks.forEach(async(appLink:{href:string, title:string}) => {
+                await page.goto(appLink.href, { waitUntil: 'networkidle2'});
+                let ratings = await crawlRatings(page);
+                return {
+                    ...appLink,
+                    ...ratings
+                }
+            })
             catLinks[catName][subCategory] = {
                 links: appLinks,
-                length: appLinks.length
+                // length: appLinks.length
             }
         }
     }
@@ -131,6 +139,10 @@ const mainFn = async () => {
 
     //MAYBE PULL RATINGS FROM WITHIN THE APP LINK FUNCTION ???
     let all = await aggregateAppLinksByCategories(page);
+    
+    for (const v of Object.values(all?.storeManagement?.operations)) {
+        console.log(v)
+    }
 
     // const appLinks = await crawlAppLinks(page, 5);
 
