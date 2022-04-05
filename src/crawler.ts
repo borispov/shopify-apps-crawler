@@ -1,8 +1,9 @@
 import puppeteer, { ConsoleMessage, Puppeteer } from 'puppeteer';
 import categories from './categoriesWithLinks.json'
+import fs from 'fs/promises';
 
 // UTILS
-const catToUrl = (cat:string, sortBy:string = 'installed') => `${baseURL}/${cat}${sortBy?'?sort_by=installed':null}`
+const catToUrl = (cat:string, sortBy:string = 'installed') => `${cat}${sortBy?'?sort_by=installed':null}`
 const getCategory = (cat:CatName):Object => {
     return categories[cat];
 }
@@ -92,10 +93,10 @@ const ratingCrawler: (Record:AppLink, catInfo:object, isBreak?:Boolean) => Promi
 
         }, reviewsAnchorSelector, averageReviewSelector, ratingListSelector, ratingItemSelector )
 
-        console.log({
-            ...appData,
-            ...reviewData
-        })
+        // console.log({
+        //     ...appData,
+        //     ...reviewData
+        // })
         return {
             ...appData,
             ...reviewData,
@@ -149,30 +150,28 @@ const mainFn = async () => {
 
     const catNames = Object.keys(categories);
 
-    let bigData:any;
+    let bigData:any = [];
 
     for (const [i, catName] of catNames.entries()) {
         if (i === 1) { break } // don't go deeper than one category at first
         let subCats = getCategory(catName as CatName);
-        let subLinks = Object.entries(subCats)
+        let subLinks = new Map(Object.entries(subCats).slice(0,1));
         let catApps:Array<object> = [];
-        subLinks.map(([name, link]) => {
+
+        for (let [name,link] of subLinks) {
             let href = catToUrl(link);
             let prereqData = {
                 subCat: name,
                 cat: catName
             }
-            let crawledCatApps = crawlAll(href, prereqData)
-            catApps.concat(crawledCatApps)
-        })
-        bigData.concat(catApps);
+            let crawledCatApps = await crawlAll(href, prereqData)
+            bigData.push(crawledCatApps)
+            bigData.concat(crawledCatApps)
+        }
     }
     console.log(bigData)
-    // let categoryUrl = 'https://apps.shopify.com/browse/store-design-page-enhancements?sort_by=installed';
-    // await crawlAll(categoryUrl);
-    // const promised = appLinks.slice(0,7).map(ratingCrawler)
-    // Promise.all(promised)
-    // browser.close();
+    await fs.writeFile('./bigdata.json', JSON.stringify(bigData.flat()));
+    await browser.close();
 }
 
 mainFn();

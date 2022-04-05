@@ -21,8 +21,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const puppeteer_1 = __importDefault(require("puppeteer"));
 const categoriesWithLinks_json_1 = __importDefault(require("./categoriesWithLinks.json"));
+const promises_1 = __importDefault(require("fs/promises"));
 // UTILS
-const catToUrl = (cat, sortBy = 'installed') => `${baseURL}/${cat}${sortBy ? '?sort_by=installed' : null}`;
+const catToUrl = (cat, sortBy = 'installed') => `${cat}${sortBy ? '?sort_by=installed' : null}`;
 const getCategory = (cat) => {
     return categoriesWithLinks_json_1.default[cat];
 };
@@ -99,7 +100,10 @@ const ratingCrawler = (appData, catInfo, isBreak) => __awaiter(void 0, void 0, v
                 ratings: reviews,
             };
         }, reviewsAnchorSelector, averageReviewSelector, ratingListSelector, ratingItemSelector);
-        console.log(Object.assign(Object.assign({}, appData), reviewData));
+        // console.log({
+        //     ...appData,
+        //     ...reviewData
+        // })
         return Object.assign(Object.assign(Object.assign({}, appData), reviewData), catInfo);
     }
     catch (error) {
@@ -152,30 +156,27 @@ const mainFn = () => __awaiter(void 0, void 0, void 0, function* () {
         args: ['--no-sandbox', '--disable-gpu']
     });
     const catNames = Object.keys(categoriesWithLinks_json_1.default);
-    let bigData;
+    let bigData = [];
     for (const [i, catName] of catNames.entries()) {
         if (i === 1) {
             break;
         } // don't go deeper than one category at first
         let subCats = getCategory(catName);
-        let subLinks = Object.entries(subCats);
+        let subLinks = new Map(Object.entries(subCats).slice(0, 1));
         let catApps = [];
-        subLinks.map(([name, link]) => {
+        for (let [name, link] of subLinks) {
             let href = catToUrl(link);
             let prereqData = {
                 subCat: name,
                 cat: catName
             };
-            let crawledCatApps = crawlAll(href, prereqData);
-            catApps.concat(crawledCatApps);
-        });
-        bigData.concat(catApps);
+            let crawledCatApps = yield crawlAll(href, prereqData);
+            bigData.push(crawledCatApps);
+            bigData.concat(crawledCatApps);
+        }
     }
     console.log(bigData);
-    // let categoryUrl = 'https://apps.shopify.com/browse/store-design-page-enhancements?sort_by=installed';
-    // await crawlAll(categoryUrl);
-    // const promised = appLinks.slice(0,7).map(ratingCrawler)
-    // Promise.all(promised)
-    // browser.close();
+    yield promises_1.default.writeFile('./bigdata.json', JSON.stringify(bigData.flat()));
+    yield browser.close();
 });
 mainFn();
